@@ -12,9 +12,13 @@
 
 #include <glfw3.h>
 #include <GL/gl.h>
+#include <glm\vec3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 void render(GLFWwindow*);
 void init();
+
 
 #define glInfo(a) std::cout << #a << ": " << glGetString(a) << std::endl
 
@@ -75,7 +79,7 @@ int main(void)
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-	//glDebugMessageCallback(debug, nullptr);
+	glDebugMessageCallback((GLDEBUGPROC)debug, nullptr);
 
 	// This is our openGL init function which creates ressources
 	init();
@@ -177,6 +181,16 @@ GLuint buildProgram(const std::string vertexFile, const std::string fragmentFile
 /****************************************************************
 ******* INTERESTING STUFFS HERE ********************************
 ***************************************************************/
+static float cpt1 = 0;
+static float cpt2 = 0;
+static float cpt3 = 0;
+
+static float tx = -0.5;
+static float datas[] = {-0.5,-0.5,0, 0.5,-0.5,0, 0.5,0.5,0, -0.5,0.5,0};
+static GLuint buffer; 
+static glm::mat4 projectionMatrix;
+static glm::mat4 viewMatrix;
+static int cptCamera = 0;
 
 // Store the global state of your program
 struct
@@ -190,7 +204,22 @@ void init()
 	// Build our program and an empty VAO
 	gs.program = buildProgram("basic.vsl", "basic.fsl");
 
+	
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, 12 * 4, datas, GL_STATIC_DRAW);
 	glCreateVertexArrays(1, &gs.vao);
+
+	glBindVertexArray(gs.vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	
+	glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexArrayAttrib(gs.vao, 12);
+
+	glBindVertexArray(0);
+
+	
 }
 
 void render(GLFWwindow* window)
@@ -198,13 +227,41 @@ void render(GLFWwindow* window)
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
+	glClear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(gs.program);
 	glBindVertexArray(gs.vao);
+	glUseProgram(gs.program);
+	
+	projectionMatrix = glm::perspective(45.0f, 640.0f / 480.0f, 1.0f, 200.0f);
+	viewMatrix = glm::lookAt(glm::vec3(sin(cptCamera++/100.0), cos(cptCamera / 100.0), 3), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
 
-	{
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-	}
+	glm::mat4 MVP = projectionMatrix * viewMatrix;
+
+	glProgramUniformMatrix4fv(gs.program, 15, 1, GL_FALSE, &MVP[0][0]);
+
+	glProgramUniform1f(gs.program, 3, fmod(cpt1 += 0.01, 1));
+	glProgramUniform1f(gs.program, 4, fmod(cpt2 += 0.05, 1));
+	glProgramUniform1f(gs.program, 5, fmod(cpt3 += 0.02, 1));
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	/*glProgramUniform1f(gs.program, 3, fmod(cpt1 += 0.01, 1));
+	glProgramUniform1f(gs.program, 4, fmod(cpt2 += 0.05, 1));
+	glProgramUniform1f(gs.program, 5, fmod(cpt3 += 0.02, 1));
+
+	glProgramUniform1f(gs.program, 6, (sin(tx++/100.0)+1)*0.75-1);
+	glProgramUniform1f(gs.program, 7, (sin(tx++ / 100.0) + 1)*0.75 - 1);
+		
+
+
+	glProgramUniform1f(gs.program, 3, fmod(cpt1 + 0.5, 1));
+	glProgramUniform1f(gs.program, 4, fmod(cpt2 + 0.01, 1));
+	glProgramUniform1f(gs.program, 5, fmod(cpt3 + 0.01, 1));
+
+	glProgramUniform1f(gs.program, 6, (sin(tx++ / 80.0) + 1)*0.75 - 1);
+	glProgramUniform1f(gs.program, 7, (cos(tx++ / 100) + 1)*0.75 - 1);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);*/
+	
 
 	glBindVertexArray(0);
 	glUseProgram(0);
