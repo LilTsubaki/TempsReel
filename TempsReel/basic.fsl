@@ -4,7 +4,9 @@ layout(location=4) uniform float x;
 layout(location=5) uniform float y;
 out vec4 color_out;
 
+in vec3 norm_out;
+
 void main()
 {
-	color_out = vec4(v, x, y, 1);
+	color_out = vec4(norm_out, 1);
 }

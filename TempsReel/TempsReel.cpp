@@ -16,6 +16,9 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
+#include "Maillage.h"
+
 void render(GLFWwindow*);
 void init();
 
@@ -178,6 +181,8 @@ GLuint buildProgram(const std::string vertexFile, const std::string fragmentFile
 	return program;
 }
 
+
+
 /****************************************************************
 ******* INTERESTING STUFFS HERE ********************************
 ***************************************************************/
@@ -191,6 +196,7 @@ static GLuint buffer;
 static glm::mat4 projectionMatrix;
 static glm::mat4 viewMatrix;
 static int cptCamera = 0;
+static int nbTriangles;
 
 // Store the global state of your program
 struct
@@ -199,24 +205,52 @@ struct
 	GLuint vao; // a vertex array object
 } gs;
 
+
 void init()
 {
 	// Build our program and an empty VAO
 	gs.program = buildProgram("basic.vsl", "basic.fsl");
 
+	Maillage m;
+	glm::vec3 min;
+	glm::vec3 max;
+	m.geometry(glm::vec3(0.f, 0.f, 0.f), "C:/Users/etu/Desktop/monkey.obj", min, max);
+
+	std::vector<float> points = m.getAllPoints();
+	nbTriangles = points.size();
 	
+	std::vector<float> norms = m.getallNormals();
+
+	std::vector<float> all;
+	all.reserve(points.size() * 2);
+
+	for (int i = 0; i < points.size() ; i+=3)
+	{
+		all.push_back(points.at(i));
+		all.push_back(points.at(i+1));
+		all.push_back(points.at(i+2));
+		all.push_back(norms.at(i));
+		all.push_back(norms.at(i+1));
+		all.push_back(norms.at(i+2));
+	}
+
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, 12 * 4, datas, GL_STATIC_DRAW);
-	glCreateVertexArrays(1, &gs.vao);
 
+	glBufferData(GL_ARRAY_BUFFER, all.size() * 4, all.data(), GL_STATIC_DRAW);
+
+
+	glCreateVertexArrays(1, &gs.vao);
 	glBindVertexArray(gs.vao);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
 	
-	glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexArrayAttrib(gs.vao, 12);
+	glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, 6*4, 0);
+	glVertexAttribPointer(13, 3, GL_FLOAT, GL_FALSE, 6 * 4, (void*)(3*4));
 
+
+	glEnableVertexArrayAttrib(gs.vao, 12);
+	glEnableVertexArrayAttrib(gs.vao, 13);
 	glBindVertexArray(0);
 
 	
@@ -228,22 +262,24 @@ void render(GLFWwindow* window)
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glBindVertexArray(gs.vao);
 	glUseProgram(gs.program);
-	
+	glEnable(GL_DEPTH_TEST);
+
 	projectionMatrix = glm::perspective(45.0f, 640.0f / 480.0f, 1.0f, 200.0f);
-	viewMatrix = glm::lookAt(glm::vec3(sin(cptCamera++/100.0), cos(cptCamera / 100.0), 3), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
+	viewMatrix = glm::lookAt(glm::vec3(sin(cptCamera/100.0), cos(cptCamera / 100.0), -3), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
 
 	glm::mat4 MVP = projectionMatrix * viewMatrix;
 
 	glProgramUniformMatrix4fv(gs.program, 15, 1, GL_FALSE, &MVP[0][0]);
 
-	glProgramUniform1f(gs.program, 3, fmod(cpt1 += 0.01, 1));
-	glProgramUniform1f(gs.program, 4, fmod(cpt2 += 0.05, 1));
-	glProgramUniform1f(gs.program, 5, fmod(cpt3 += 0.02, 1));
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glProgramUniform1f(gs.program, 3, 1); //fmod(cpt1 += 0.01, 1));
+	glProgramUniform1f(gs.program, 4, 1); //fmod(cpt2 += 0.05, 1));
+	glProgramUniform1f(gs.program, 5, 1); // fmod(cpt3 += 0.02, 1));
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDrawArrays(GL_TRIANGLES, 0, nbTriangles);
 	/*glProgramUniform1f(gs.program, 3, fmod(cpt1 += 0.01, 1));
 	glProgramUniform1f(gs.program, 4, fmod(cpt2 += 0.05, 1));
 	glProgramUniform1f(gs.program, 5, fmod(cpt3 += 0.02, 1));
@@ -265,13 +301,6 @@ void render(GLFWwindow* window)
 
 	glBindVertexArray(0);
 	glUseProgram(0);
-
-
-
-
-
-
-
 }
 
 

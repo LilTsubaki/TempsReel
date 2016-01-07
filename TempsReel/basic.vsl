@@ -1,17 +1,11 @@
 #version 430
+out vec3 norm_out;
 layout(location = 12) in vec3 pos;
+layout(location = 13) in vec3 norm;
 layout(location = 15) uniform mat4 mat;
 
 void main()
 {
-    //if(gl_VertexID == 0)
 	gl_Position = mat*vec4(pos, 1);
-	
-	
-    /*if(gl_VertexID == 1)
-	gl_Position = vec4(pos, 1);
-    if(gl_VertexID == 2)
-	gl_Position = vec4(pos, 1);
-    if(gl_VertexID == 3)
-	gl_Position = vec4(pos, 1);*/
+	norm_out = norm;
 }
