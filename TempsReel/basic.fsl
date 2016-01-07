@@ -2,11 +2,45 @@
 layout(location=3) uniform float v;
 layout(location=4) uniform float x;
 layout(location=5) uniform float y;
+layout(location=6) uniform vec3 light;
+layout(location = 15) uniform mat4 mat;
+layout(location = 16) uniform mat4 matLight;
+
+layout(binding = 0) uniform sampler2D textureDepth;
+
 out vec4 color_out;
 
 in vec3 norm_out;
+in vec3 position_out;
 
 void main()
 {
-	color_out = vec4(norm_out, 1);
+	vec3 pos = position_out;
+	vec3 direction = normalize(light - pos);
+
+
+	float distance = distance(pos, light);
+	float teta = abs(dot(norm_out, direction));
+	float value = 1/(distance * distance)*teta;
+	vec4 posTemp = mat*vec4(position_out, 1);
+
+	vec4 posLight = matLight*vec4(position_out, 1);
+	posLight /= posLight.w;
+	posLight += vec4(1,1,1,0);
+	posLight /= vec4(2,2,2,1);
+
+	vec4 depth = texture(textureDepth, posLight.xy);
+
+	if(posLight.z > depth.z+0.1  && posLight.x >0 && posLight.x < 1 && posLight.y >0 && posLight.y <1)
+	{
+		color_out = vec4(pow(value, 1/2.2)*0.2,0,0, 1);
+	}
+	else
+	{
+		color_out = vec4(pow(value, 1/2.2),0,0, 1);
+	}
+	
+
+
+	
 }

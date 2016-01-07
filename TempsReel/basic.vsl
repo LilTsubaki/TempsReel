@@ -1,5 +1,7 @@
 #version 430
 out vec3 norm_out;
+out vec3 position_out;
+
 layout(location = 12) in vec3 pos;
 layout(location = 13) in vec3 norm;
 layout(location = 15) uniform mat4 mat;
@@ -7,5 +9,6 @@ layout(location = 15) uniform mat4 mat;
 void main()
 {
 	gl_Position = mat*vec4(pos, 1);
+	position_out = pos;
 	norm_out = norm;
 }
