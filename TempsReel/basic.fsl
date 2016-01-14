@@ -20,7 +20,7 @@ void main()
 
 
 	float distance = distance(pos, light);
-	float teta = abs(dot(norm_out, direction));
+	float teta = max(0,dot(norm_out, direction));
 	float value = 1/(distance * distance)*teta;
 	vec4 posTemp = mat*vec4(position_out, 1);
 
